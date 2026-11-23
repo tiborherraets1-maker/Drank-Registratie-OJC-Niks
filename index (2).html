@@ -1,0 +1,1808 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OJC Niks – Drankenregistratie Trefpunt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ojc-oranje: #F5A500;
+    --ojc-oranje-dark: #D48F00;
+    --ojc-oranje-light: #FFF8E6;
+    --ojc-oranje-border: #F5C84A;
+    --color-text: #1E293B;
+    --color-text-muted: #64748B;
+    --color-bg: #F8F9FA;
+    --color-surface: #FFFFFF;
+    --color-muted: #F1F5F9;
+    --color-border: #E2E8F0;
+    --color-success: #16A34A;
+    --color-danger: #DC2626;
+    --color-wijn: #7C3AED;
+    --radius: 8px;
+    --shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Jost', system-ui, sans-serif;
+    background: var(--color-bg);
+    color: var(--color-text);
+    min-height: 100dvh;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  /* ── Header ── */
+  header {
+    background: #fff;
+    border-bottom: 3px solid var(--ojc-oranje);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .header-left h1 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--ojc-oranje);
+    letter-spacing: 0.02em;
+  }
+  .header-left p {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+  }
+  .header-logo img {
+    height: 52px;
+    width: auto;
+  }
+
+  /* ── Wachtwoord modal ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 9000;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-box {
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 28px 24px 20px;
+    width: 320px;
+    max-width: calc(100vw - 32px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    text-align: center;
+  }
+  .modal-box h2 { font-size: 1.05rem; font-weight: 700; margin-bottom: 6px; }
+  .modal-box p  { font-size: 0.82rem; color: var(--color-text-muted); margin-bottom: 16px; }
+  .modal-box input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius);
+    font-family: inherit;
+    font-size: 1rem;
+    margin-bottom: 8px;
+    text-align: center;
+    letter-spacing: 0.1em;
+  }
+  .modal-box input:focus { outline: none; border-color: var(--ojc-oranje); }
+  .modal-error { font-size: 0.8rem; color: var(--color-danger); min-height: 18px; margin-bottom: 10px; }
+  .modal-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  /* ── Registratie detail modal ── */
+  .reg-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 8000;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 20px 12px 40px;
+    overflow-y: auto;
+  }
+  .reg-modal-overlay.show { display: flex; }
+  .reg-modal-box {
+    background: #fff;
+    border-radius: var(--radius);
+    width: 100%;
+    max-width: 520px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    overflow: hidden;
+    margin: auto;
+  }
+  .reg-modal-header {
+    background: var(--ojc-oranje);
+    color: #fff;
+    padding: 14px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .reg-modal-header h2 { font-size: 1rem; font-weight: 700; }
+  .reg-modal-close {
+    background: none; border: none; color: #fff; font-size: 1.4rem;
+    cursor: pointer; line-height: 1; padding: 0 4px;
+  }
+  .reg-modal-body { padding: 16px; }
+  .reg-detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--color-muted);
+    font-size: 0.9rem;
+  }
+  .reg-detail-row:last-child { border-bottom: none; }
+  .reg-detail-label { color: var(--color-text-muted); }
+  .reg-detail-val { font-weight: 600; text-align: right; }
+  .reg-section-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--ojc-oranje-dark);
+    background: var(--ojc-oranje-light);
+    border-left: 3px solid var(--ojc-oranje);
+    padding: 4px 10px;
+    margin: 12px -0px 6px;
+  }
+
+  /* ── Layout ── */
+  main {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 20px 16px 80px;
+  }
+
+  /* ── Card ── */
+  .card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    margin-bottom: 14px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .card-header {
+    background: var(--ojc-oranje);
+    color: #fff;
+    padding: 9px 16px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-body { padding: 16px; }
+
+  /* ── Categorie label ── */
+  .cat-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ojc-oranje-dark);
+    background: var(--ojc-oranje-light);
+    border-left: 3px solid var(--ojc-oranje);
+    padding: 4px 10px;
+    margin: 12px -16px 8px;
+  }
+  .cat-label:first-child { margin-top: 0; }
+
+  /* ── Form fields ── */
+  .field { margin-bottom: 12px; }
+  .field label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--color-text);
+  }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius);
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: var(--color-text);
+    background: var(--color-surface);
+    transition: border-color 150ms ease;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: none;
+    border-color: var(--ojc-oranje);
+  }
+  .field textarea { resize: vertical; min-height: 70px; }
+  .fields-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ── Drink rows ── */
+  .drink-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--color-muted);
+  }
+  .drink-row:last-child { border-bottom: none; }
+  .drink-name { font-size: 0.92rem; font-weight: 500; }
+  .drink-meta { font-size: 0.72rem; color: var(--color-text-muted); }
+
+  /* ── Counter ── */
+  .counter {
+    display: flex;
+    align-items: center;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--color-surface);
+  }
+  .counter button {
+    background: var(--color-muted);
+    border: none;
+    width: 38px;
+    height: 38px;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--color-text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 120ms ease;
+    touch-action: manipulation;
+    flex-shrink: 0;
+  }
+  .counter button:hover { background: var(--ojc-oranje-border); }
+  .counter button:active { background: var(--ojc-oranje); color: #fff; }
+  .counter input {
+    width: 48px;
+    text-align: center;
+    border: none;
+    border-left: 1.5px solid var(--color-border);
+    border-right: 1.5px solid var(--color-border);
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-text);
+    padding: 0 2px;
+    height: 38px;
+    background: var(--color-surface);
+  }
+  .counter input:focus { outline: none; background: var(--ojc-oranje-light); }
+  .counter input::-webkit-outer-spin-button,
+  .counter input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .counter input[type=number] { -moz-appearance: textfield; }
+
+  /* ── Liter tap ── */
+  .liter-input {
+    display: flex;
+    align-items: center;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--color-surface);
+  }
+  .liter-input button {
+    background: var(--color-muted);
+    border: none;
+    width: 38px;
+    height: 38px;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--color-text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 120ms ease;
+    touch-action: manipulation;
+    flex-shrink: 0;
+  }
+  .liter-input button:hover { background: var(--ojc-oranje-border); }
+  .liter-input button:active { background: var(--ojc-oranje); color: #fff; }
+  .liter-input span {
+    width: 64px;
+    text-align: center;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--color-text);
+    border-left: 1.5px solid var(--color-border);
+    border-right: 1.5px solid var(--color-border);
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 4px;
+    margin-bottom: 18px;
+    gap: 4px;
+  }
+  .tab {
+    flex: 1;
+    padding: 9px 6px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all 150ms ease;
+    touch-action: manipulation;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+  }
+  .tab.active { background: var(--ojc-oranje); color: #fff; }
+  .tab:not(.active):hover { background: var(--ojc-oranje-light); color: var(--color-text); }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ── Buttons ── */
+  .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border: none;
+    border-radius: var(--radius);
+    font-family: inherit;
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 150ms ease, transform 100ms ease;
+    touch-action: manipulation;
+    min-height: 46px;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--ojc-oranje); color: #fff; }
+  .btn-primary:hover { background: var(--ojc-oranje-dark); }
+  .btn-outline { background: transparent; border: 1.5px solid var(--color-border); color: var(--color-text); }
+  .btn-outline:hover { background: var(--color-muted); }
+  .btn-print { background: #1E293B; color: #fff; }
+  .btn-print:hover { background: #0F172A; }
+
+  /* ── Saved orders ── */
+  .order-item {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    box-shadow: var(--shadow);
+  }
+  .order-info { flex: 1; min-width: 0; }
+  .order-name { font-weight: 700; font-size: 0.95rem; }
+  .order-date { font-size: 0.78rem; color: var(--color-text-muted); }
+  .order-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .icon-btn {
+    background: var(--color-muted);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    transition: all 150ms ease;
+    touch-action: manipulation;
+  }
+  .icon-btn:hover { background: var(--ojc-oranje-light); color: var(--ojc-oranje-dark); border-color: var(--ojc-oranje-border); }
+  .icon-btn.danger:hover { background: #FEE2E2; color: var(--color-danger); border-color: var(--color-danger); }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #1E293B;
+    color: #fff;
+    padding: 11px 20px;
+    border-radius: var(--radius);
+    font-size: 0.88rem;
+    font-weight: 500;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 200ms, transform 200ms;
+    white-space: nowrap;
+    max-width: calc(100vw - 40px);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.success { background: var(--color-success); }
+
+  /* ── Factuur ── */
+  .factuur-wrap {
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    margin-bottom: 14px;
+  }
+  .factuur-kop {
+    padding: 20px 24px 16px;
+    border-bottom: 3px solid var(--ojc-oranje);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .factuur-kop-links .org { font-size: 0.85rem; color: var(--color-text-muted); line-height: 1.5; }
+  .factuur-kop-rechts { text-align: right; }
+  .factuur-kop-rechts .ojc-naam {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--ojc-oranje);
+    letter-spacing: -0.01em;
+    line-height: 1;
+  }
+  .factuur-meta {
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--color-border);
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 2px 24px;
+    font-size: 0.88rem;
+  }
+  .factuur-meta .lbl { font-weight: 700; }
+  .factuur-tabel { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  .factuur-tabel thead tr { background: var(--ojc-oranje); color: #fff; }
+  .factuur-tabel th { padding: 8px 12px; text-align: left; font-weight: 700; font-size: 0.78rem; letter-spacing: 0.04em; }
+  .factuur-tabel th.num { text-align: right; }
+  .factuur-tabel tbody tr:nth-child(even) { background: #FFFBF0; }
+  .factuur-tabel tbody tr:nth-child(odd)  { background: #fff; }
+  .factuur-tabel td { padding: 7px 12px; border-bottom: 1px solid #F1F5F9; }
+  .factuur-tabel td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .factuur-tabel td.btw-label { color: var(--color-text-muted); font-size: 0.8rem; }
+  .factuur-tabel .subtotaal-row td { font-weight: 700; border-top: 2px solid var(--ojc-oranje); border-bottom: none; background: #fff; }
+  .factuur-tabel .btw-row td { background: #fff; color: var(--color-text-muted); }
+  .factuur-tabel .provisie-row td { background: var(--ojc-oranje-light); color: var(--ojc-oranje-dark); font-weight: 600; }
+  .factuur-tabel .totaal-row td { font-weight: 800; font-size: 1rem; background: var(--ojc-oranje); color: #fff; border: none; }
+  .factuur-footer {
+    padding: 16px 24px;
+    border-top: 3px solid var(--ojc-oranje);
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    text-align: center;
+    line-height: 1.6;
+  }
+  .factuur-footer strong { color: var(--color-text); }
+  .te-betalen {
+    margin: 12px 24px 0;
+    padding: 14px 20px;
+    background: var(--ojc-oranje-light);
+    border: 2px solid var(--ojc-oranje);
+    border-radius: var(--radius);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+  .te-betalen .bedrag { font-size: 1.5rem; color: var(--ojc-oranje-dark); }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--color-text-muted);
+  }
+  .empty-state svg { margin-bottom: 12px; opacity: 0.35; }
+  .empty-state p { font-size: 0.9rem; }
+
+  @media (max-width: 600px) {
+    .fields-row { grid-template-columns: 1fr; }
+    .btn-row { grid-template-columns: 1fr; }
+    .factuur-kop-rechts .ojc-naam { font-size: 1.3rem; }
+    .te-betalen .bedrag { font-size: 1.2rem; }
+    header { padding: 12px 16px; }
+    .header-left h1 { font-size: 1.1rem; }
+    .header-logo img { height: 42px; }
+    .tabs { gap: 2px; padding: 3px; }
+    .tab { font-size: 0.75rem; padding: 8px 4px; gap: 3px; }
+    .tab svg { display: none; }
+    main { padding: 14px 10px 80px; }
+  }
+
+  /* ── Productbeheer ── */
+  .np-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .leeg-cat { font-size: 0.85rem; color: var(--color-text-muted); padding: 6px 0; }
+  .card-header-count { margin-left: auto; font-weight: 500; opacity: 0.85; }
+  .beheer-body { padding: 4px 16px; }
+  .beheer-rij { padding: 12px 0; border-bottom: 1px solid var(--color-muted); }
+  .beheer-rij:last-child { border-bottom: none; }
+  .beheer-rij.inactief .beheer-naam, .beheer-rij.inactief .beheer-velden { opacity: 0.5; }
+  .beheer-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .beheer-naam {
+    flex: 1; min-width: 0; padding: 7px 10px; font-family: inherit; font-size: 0.95rem; font-weight: 600;
+    border: 1.5px solid var(--color-border); border-radius: var(--radius); color: var(--color-text); background: var(--color-surface);
+  }
+  .beheer-naam:focus, .beheer-velden input:focus, .beheer-velden select:focus { outline: none; border-color: var(--ojc-oranje); }
+  .beheer-toon { display: flex; align-items: center; gap: 5px; font-size: 0.8rem; font-weight: 500; color: var(--color-text-muted); cursor: pointer; white-space: nowrap; }
+  .beheer-toon input { accent-color: var(--ojc-oranje); width: 16px; height: 16px; }
+  .icon-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .icon-btn.danger:disabled:hover { background: var(--color-muted); color: var(--color-text-muted); border-color: var(--color-border); }
+  .beheer-velden { display: grid; grid-template-columns: 1.2fr 0.8fr 1fr 1.3fr; gap: 8px; }
+  .beheer-velden label { display: flex; flex-direction: column; gap: 3px; font-size: 0.7rem; font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .beheer-velden select, .euro-input {
+    height: 36px; padding: 0 8px; font-family: inherit; font-size: 0.9rem; color: var(--color-text);
+    border: 1.5px solid var(--color-border); border-radius: var(--radius); background: var(--color-surface); text-transform: none; letter-spacing: 0;
+  }
+  .euro-input { display: flex; align-items: center; gap: 4px; font-weight: 600; }
+  .euro-input:focus-within { border-color: var(--ojc-oranje); }
+  .euro-input input { border: none; width: 100%; min-width: 0; font-family: inherit; font-size: 0.9rem; font-weight: 600; color: var(--color-text); background: transparent; height: 100%; }
+  .euro-input input:focus { outline: none; }
+  .beheer-dirty {
+    display: none; align-items: center; gap: 8px; margin-bottom: 14px; padding: 10px 14px;
+    background: var(--ojc-oranje-light); border: 1.5px solid var(--ojc-oranje); border-radius: var(--radius);
+    font-size: 0.85rem; font-weight: 600; color: var(--ojc-oranje-dark);
+  }
+  .provisie-body { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .provisie-input { width: 110px; flex-shrink: 0; }
+  .provisie-btw { display: grid; grid-template-columns: 1fr; gap: 12px; padding-top: 0; }
+  .provisie-btw .field { margin-bottom: 0; }
+  @media (max-width: 600px) { .provisie-btw { grid-template-columns: 1fr; } }
+  .provisie-input input { text-align: right; }
+  .beheer-hint { font-size: 0.8rem; color: var(--color-text-muted); margin: 4px 2px 12px; line-height: 1.5; }
+
+  /* ── BTW-specificatie ── */
+  .btw-spec { padding: 16px 24px 0; }
+  .btw-spec-titel { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ojc-oranje-dark); margin-bottom: 6px; }
+  .btw-tabel { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+  .btw-tabel th { text-align: left; font-size: 0.74rem; font-weight: 700; color: var(--color-text-muted); padding: 6px 10px; border-bottom: 2px solid var(--color-border); }
+  .btw-tabel th.num, .btw-tabel td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .btw-tabel td { padding: 6px 10px; border-bottom: 1px solid #F1F5F9; }
+  .btw-tabel .btw-totaal td { font-weight: 700; border-top: 2px solid var(--color-border); border-bottom: none; }
+
+  @media (max-width: 600px) {
+    .np-grid { grid-template-columns: 1fr 1fr; }
+    .beheer-velden { grid-template-columns: 1fr 1fr; }
+    .btw-spec { padding: 14px 12px 0; }
+    .btw-tabel th, .btw-tabel td { padding: 6px 6px; }
+  }
+
+  /* ── Print ── */
+  @media print {
+    body { background: #fff; font-size: 11pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    header, .tabs, #no-print, .icon-btn { display: none !important; }
+    main { max-width: 100%; padding: 0; }
+    .view { display: none; }
+    #view-factuur { display: block; }
+    #factuur-acties { display: none !important; }
+    .factuur-wrap { box-shadow: none; border: 1px solid #ccc; }
+  }
+</style>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1>OJC Niks</h1>
+    <p>Drankenregistratie Trefpunt</p>
+  </div>
+  <div class="header-logo">
+    <img src="data:image/png;base64,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" alt="OJC Niks logo">
+  </div>
+</header>
+<div style="background:#F8F9FA;border-bottom:1px solid var(--color-border);padding:4px 24px;font-size:0.72rem;font-weight:600;letter-spacing:.03em;">
+  <span id="sync-status" style="color:var(--color-text-muted);">● verbinden met Firebase…</span>
+</div>
+
+<main>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('registratie')" id="tab-registratie">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      Registratie
+    </button>
+    <button class="tab" onclick="switchTab('opgeslagen')" id="tab-opgeslagen">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Opgeslagen
+    </button>
+    <button class="tab" onclick="productenTabKlik()" id="tab-producten">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+      Producten
+    </button>
+    <button class="tab" onclick="factuurTabKlik()" id="tab-factuur">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      Factuur
+    </button>
+  </div>
+
+  <!-- ══ REGISTRATIE ══ -->
+  <div class="view active" id="view-registratie">
+
+    <div class="card">
+      <div class="card-header">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Klantgegevens
+      </div>
+      <div class="card-body">
+        <div class="fields-row">
+          <div class="field">
+            <label for="naam">Naam huurder *</label>
+            <input type="text" id="naam" placeholder="Bijv. Familie Jansen" autocomplete="name">
+          </div>
+          <div class="field">
+            <label for="datum">Datum verhuur *</label>
+            <input type="date" id="datum">
+          </div>
+        </div>
+        <div class="fields-row">
+          <div class="field" style="flex:2">
+            <label for="straat">Straat en huisnummer</label>
+            <input type="text" id="straat" placeholder="Bijv. Dorpsstraat 12" autocomplete="street-address">
+          </div>
+        </div>
+        <div class="fields-row">
+          <div class="field" style="flex:0 0 110px">
+            <label for="postcode">Postcode</label>
+            <input type="text" id="postcode" placeholder="1234 AB" autocomplete="postal-code" maxlength="7">
+          </div>
+          <div class="field">
+            <label for="plaats">Plaats</label>
+            <input type="text" id="plaats" placeholder="Bijv. Horst" autocomplete="address-level2">
+          </div>
+        </div>
+        <div class="field">
+          <label for="opmerking">Opmerking</label>
+          <textarea id="opmerking" placeholder="Bijzonderheden, extra notities..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Frisdrank & sap -->
+    <div class="card">
+      <div class="card-header">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 2h8l1 7H7L8 2z"/><path d="M7 9c0 6 2 11 5 11s5-5 5-11"/></svg>
+        Frisdrank &amp; Sap
+      </div>
+      <div class="card-body" id="frisdrank-grid"></div>
+    </div>
+
+    <!-- Wijn -->
+    <div class="card">
+      <div class="card-header">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 2h8l3 10H5L8 2z"/><path d="M12 12v8"/><path d="M8 20h8"/></svg>
+        Wijn
+      </div>
+      <div class="card-body" id="wijn-grid"></div>
+    </div>
+
+    <!-- Bier -->
+    <div class="card">
+      <div class="card-header">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 11h1a3 3 0 010 6h-1"/><path d="M5 11h12v10H5z"/><path d="M5 7l2-4h10l2 4"/></svg>
+        Bier
+      </div>
+      <div class="card-body" id="bier-grid"></div>
+    </div>
+
+    <!-- Blikjes -->
+    <div class="card">
+      <div class="card-header">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M6 7h12M6 17h12"/></svg>
+        Blikjes
+      </div>
+      <div class="card-body" id="blikjes-grid"></div>
+    </div>
+
+    <!-- Overig -->
+    <div class="card">
+      <div class="card-header">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>
+        Overig
+      </div>
+      <div class="card-body" id="overig-grid"></div>
+    </div>
+
+    <div class="btn-row" id="no-print">
+      <button class="btn btn-outline" onclick="resetForm()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+        Leegmaken
+      </button>
+      <button class="btn btn-primary" onclick="slaOp()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Opslaan
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ OPGESLAGEN ══ -->
+  <div class="view" id="view-opgeslagen">
+    <div id="opgeslagen-lijst"></div>
+    <div class="btn-row" style="margin-top:18px;border-top:1px solid var(--color-border);padding-top:16px">
+      <button class="btn btn-outline" onclick="exporteerData()" title="Download alle registraties als bestand">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Exporteer data
+      </button>
+      <button class="btn btn-outline" onclick="document.getElementById('import-input').click()" title="Importeer registraties van een ander apparaat">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Importeer data
+      </button>
+      <input type="file" id="import-input" accept=".json" style="display:none" onchange="importeerData(event)">
+    </div>
+  </div>
+
+  <!-- ══ PRODUCTEN ══ -->
+  <div class="view" id="view-producten">
+    <div class="card">
+      <div class="card-header">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
+        Provisie
+      </div>
+      <div class="card-body provisie-body">
+        <div>
+          <div class="drink-name">Provisie voor OJC Niks</div>
+          <div class="drink-meta">Over het drankbedrag excl. btw · altijd 21% btw</div>
+        </div>
+        <span class="euro-input provisie-input">
+          <input type="number" id="bh-provisie" step="0.5" min="0" max="100" aria-label="Provisie in procent" oninput="wijzigProvisie(this.value)">%
+        </span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        Nieuw product
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <label for="np-naam">Productnaam *</label>
+          <input type="text" id="np-naam" placeholder="Bijv. Bitter Lemon" onkeydown="if(event.key==='Enter')voegProductToe()">
+        </div>
+        <div class="np-grid">
+          <div class="field">
+            <label for="np-cat">Categorie</label>
+            <select id="np-cat"></select>
+          </div>
+          <div class="field">
+            <label for="np-prijs">Prijs incl. btw (€) *</label>
+            <input type="number" id="np-prijs" step="0.01" min="0" placeholder="0,00">
+          </div>
+          <div class="field">
+            <label for="np-btw">BTW</label>
+            <select id="np-btw"><option value="9">9%</option><option value="21">21%</option><option value="0">0%</option></select>
+          </div>
+          <div class="field">
+            <label for="np-eenheid">Eenheid</label>
+            <select id="np-eenheid"><option value="fles">per fles</option><option value="blik">per blikje</option><option value="stuk">per stuk</option><option value="liter">per liter</option></select>
+          </div>
+        </div>
+        <button class="btn btn-primary" style="width:100%" onclick="voegProductToe()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+          Product toevoegen
+        </button>
+      </div>
+    </div>
+
+    <div class="beheer-dirty" id="beheer-dirty">
+      <span>Je hebt niet-opgeslagen wijzigingen.</span>
+    </div>
+
+    <div id="beheer-lijst"></div>
+
+    <p class="beheer-hint">Prijzen zijn inclusief btw. Een wijziging van prijs of provisie geldt voor nieuwe registraties; al opgeslagen registraties houden de prijs en provisie van het moment van opslaan. Zet "Tonen" uit om een product van het formulier te halen zonder het te verwijderen.</p>
+
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="annuleerBeheer()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+        Ongedaan maken
+      </button>
+      <button class="btn btn-primary" onclick="slaProductenOp()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Producten opslaan
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ FACTUUR ══ -->
+  <div class="view" id="view-factuur">
+    <div id="factuur-inhoud">
+      <div class="empty-state">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        <p>Selecteer een registratie bij "Opgeslagen" om de factuur te bekijken.</p>
+      </div>
+    </div>
+    <div id="factuur-acties" style="display:none;" class="btn-row" id="no-print">
+      <button class="btn btn-outline" onclick="window.print()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Afdrukken / PDF
+      </button>
+      <button class="btn btn-primary" onclick="exportTekst()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Exporteer .txt
+      </button>
+    </div>
+  </div>
+</main>
+
+<!-- ══ WACHTWOORD MODAL ══ -->
+<div class="modal-overlay" id="ww-modal">
+  <div class="modal-box">
+    <h2>Beveiligd gedeelte</h2>
+    <p>Voer het wachtwoord in om dit gedeelte te openen.</p>
+    <input type="password" id="ww-input" placeholder="Wachtwoord" onkeydown="if(event.key==='Enter')checkWW()">
+    <div class="modal-error" id="ww-error"></div>
+    <div class="modal-btns">
+      <button class="btn btn-outline" onclick="sluitWWModal()">Annuleren</button>
+      <button class="btn btn-primary" onclick="checkWW()">Bevestigen</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ REGISTRATIE DETAIL MODAL ══ -->
+<div class="reg-modal-overlay" id="reg-modal">
+  <div class="reg-modal-box">
+    <div class="reg-modal-header">
+      <h2>Registratie details</h2>
+      <button class="reg-modal-close" onclick="sluitRegModal()" aria-label="Sluiten">×</button>
+    </div>
+    <div class="reg-modal-body" id="reg-modal-body"></div>
+  </div>
+</div>
+
+<!-- ══ BEWERK MODAL ══ -->
+<div class="reg-modal-overlay" id="bewerk-modal">
+  <div class="reg-modal-box" style="max-width:480px">
+    <div class="reg-modal-header">
+      <h2>Registratie bewerken</h2>
+      <button class="reg-modal-close" onclick="sluitBewerkModal()" aria-label="Sluiten">×</button>
+    </div>
+    <div class="reg-modal-body" style="padding:0 20px 8px">
+      <div class="fields-row" style="margin-top:4px">
+        <div class="field">
+          <label for="bw-naam">Naam huurder *</label>
+          <input type="text" id="bw-naam" autocomplete="name">
+        </div>
+        <div class="field">
+          <label for="bw-datum">Datum verhuur *</label>
+          <input type="date" id="bw-datum">
+        </div>
+      </div>
+      <div class="field">
+        <label for="bw-straat">Straat en huisnummer</label>
+        <input type="text" id="bw-straat" autocomplete="street-address">
+      </div>
+      <div class="fields-row">
+        <div class="field" style="flex:0 0 110px">
+          <label for="bw-postcode">Postcode</label>
+          <input type="text" id="bw-postcode" maxlength="7">
+        </div>
+        <div class="field">
+          <label for="bw-plaats">Plaats</label>
+          <input type="text" id="bw-plaats">
+        </div>
+      </div>
+      <div class="field">
+        <label for="bw-opmerking">Opmerking</label>
+        <textarea id="bw-opmerking" rows="2"></textarea>
+      </div>
+
+      <div style="border-top:1px solid var(--color-border);margin:12px 0 8px;padding-top:12px">
+        <div style="font-size:0.78rem;font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Dranken</div>
+        <div id="bw-dranken-grid"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;padding:12px 20px 18px;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="sluitBewerkModal()">Annuleren</button>
+      <button class="btn btn-primary" onclick="slaBewerking()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Opslaan
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+//  WACHTWOORD  (pas hier aan)
+// ══════════════════════════════════════════════
+const FACTUUR_WW = 'ojcniks';
+
+// ══════════════════════════════════════════════
+//  CATEGORIEËN & STANDAARD ASSORTIMENT
+//  (wordt alleen gebruikt zolang er nog geen productenlijst in Firebase staat)
+// ══════════════════════════════════════════════
+const CATEGORIEEN = [
+  { id:'frisdrank', naam:'Frisdrank & Sap' },
+  { id:'wijn',      naam:'Wijn' },
+  { id:'bier',      naam:'Bier' },
+  { id:'blikjes',   naam:'Blikjes' },
+  { id:'overig',    naam:'Overig' },
+];
+const EENHEDEN = { fles:'per fles', blik:'per blikje', stuk:'per stuk', liter:'per liter' };
+const DEFAULT_PRODUCTEN = [
+  { id:'cola',       naam:'Cola',        cat:'frisdrank', prijs:2.71, btw:9,  eenheid:'fles',  actief:true },
+  { id:'cola-zero',  naam:'Cola Zero',   cat:'frisdrank', prijs:2.07, btw:9,  eenheid:'fles',  actief:true },
+  { id:'fanta',      naam:'Fanta',       cat:'frisdrank', prijs:2.06, btw:9,  eenheid:'fles',  actief:true },
+  { id:'cassis',     naam:'Cassis',      cat:'frisdrank', prijs:2.02, btw:9,  eenheid:'fles',  actief:true },
+  { id:'ice-tea',    naam:'Ice Tea',     cat:'frisdrank', prijs:1.84, btw:9,  eenheid:'fles',  actief:true },
+  { id:'seven-up',   naam:'Seven-Up',    cat:'frisdrank', prijs:1.40, btw:9,  eenheid:'fles',  actief:true },
+  { id:'appelsap',   naam:'Appelsap',    cat:'frisdrank', prijs:0.80, btw:9,  eenheid:'fles',  actief:true },
+  { id:'spa-rood',   naam:'Spa Rood',    cat:'frisdrank', prijs:0.78, btw:9,  eenheid:'fles',  actief:true },
+  { id:'spa-blauw',  naam:'Spa Blauw',   cat:'frisdrank', prijs:0.78, btw:9,  eenheid:'fles',  actief:true },
+  { id:'witte-wijn', naam:'Witte Wijn',  cat:'wijn',      prijs:5.70, btw:9,  eenheid:'fles',  actief:true },
+  { id:'rode-wijn',  naam:'Rode Wijn',   cat:'wijn',      prijs:5.70, btw:9,  eenheid:'fles',  actief:true },
+  { id:'tapbier',    naam:'Tapbier',     cat:'bier',      prijs:2.35, btw:21, eenheid:'liter', actief:true },
+  { id:'amstel-00',  naam:'Amstel 0.0',  cat:'bier',      prijs:0.66, btw:9,  eenheid:'fles',  actief:true },
+  { id:'radler-00',  naam:'Radler 0.0',  cat:'bier',      prijs:0.78, btw:21, eenheid:'fles',  actief:true },
+  { id:'donker',     naam:'Donker Bier', cat:'bier',      prijs:0.96, btw:21, eenheid:'fles',  actief:true },
+];
+const BTW_TARIEVEN = [0, 9, 21];
+
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+let PRODUCTEN = clone(DEFAULT_PRODUCTEN);
+let opgeslagen = [];
+let actieveFactuur = null;
+let volgendFactuurNr = 15;
+let ontgrendeld = false;
+let wwCallback = null;
+let beheerLijst = clone(PRODUCTEN);
+let productenDirty = false;
+let PROVISIE = 10;          // huidig provisiepercentage
+let beheerProvisie = 10;
+const PROVISIE_BTW = 21;     // provisie is een dienst: altijd 21% btw
+
+// ══════════════════════════════════════════════
+//  FIREBASE
+// ══════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyBtmDdebINnz_pyX_kNMHdlZZfbkkvLcfs",
+  authDomain: "ojcniks-drankformulier.firebaseapp.com",
+  projectId: "ojcniks-drankformulier",
+  storageBucket: "ojcniks-drankformulier.firebasestorage.app",
+  messagingSenderId: "684506067726",
+  appId: "1:684506067726:web:b5c0ba5e814f39b4fb5d5f"
+};
+// Als Firebase niet laadt, blijft de pagina werken met de ingebouwde productlijst
+let db = null;
+try {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+} catch (e) {
+  db = null;
+}
+function geenDb() {
+  if (db) return false;
+  toast('Geen verbinding met Firebase — opslaan is nu niet mogelijk.');
+  return true;
+}
+
+if (!db) {
+  document.getElementById('sync-status').textContent = '● geen verbinding met Firebase';
+  document.getElementById('sync-status').style.color = 'var(--color-danger)';
+} else {
+
+// Real-time listener — werkt op alle apparaten tegelijk
+db.collection('registraties').orderBy('datum', 'desc').onSnapshot(snap => {
+  opgeslagen = snap.docs.map(d => ({ ...d.data(), _docId: d.id }));
+  renderOpgeslagen();
+  if (!productenDirty) renderBeheer();
+  document.getElementById('sync-status').textContent = '● gesynchroniseerd';
+  document.getElementById('sync-status').style.color = 'var(--color-success)';
+}, err => {
+  document.getElementById('sync-status').textContent = '● geen verbinding';
+  document.getElementById('sync-status').style.color = 'var(--color-danger)';
+});
+
+db.collection('meta').doc('config').onSnapshot(doc => {
+  if (doc.exists) volgendFactuurNr = doc.data().factuurnr || 15;
+});
+
+db.collection('meta').doc('producten').onSnapshot(doc => {
+  const lijst = doc.exists ? doc.data().lijst : null;
+  PRODUCTEN = Array.isArray(lijst) && lijst.length ? lijst : clone(DEFAULT_PRODUCTEN);
+  const pv = doc.exists ? doc.data().provisie : null;
+  PROVISIE = typeof pv === 'number' ? pv : 10;
+  initGrids();
+  if (!productenDirty) laadBeheer();
+});
+}
+
+// ══════════════════════════════════════════════
+//  PRODUCT-HULPFUNCTIES
+// ══════════════════════════════════════════════
+function clone(x) { return JSON.parse(JSON.stringify(x)); }
+function snap(p) { return { naam:p.naam, cat:p.cat, prijs:p.prijs, btw:p.btw, eenheid:p.eenheid||'fles' }; }
+function vindProduct(id) {
+  return PRODUCTEN.find(p => p.id === id) || DEFAULT_PRODUCTEN.find(p => p.id === id) || null;
+}
+function isLiter(r) { return r.eenheid === 'liter'; }
+function fmtAantal(r) { return isLiter(r) ? `${r.aant} L` : `${r.aant}×`; }
+
+// Alle regels van een registratie, met de prijzen die golden bij het opslaan
+function regelsVoor(o) {
+  const volgorde = id => { const i = PRODUCTEN.findIndex(p => p.id === id); return i < 0 ? 9999 : i; };
+  const catIdx = c => { const i = CATEGORIEEN.findIndex(x => x.id === c); return i < 0 ? 99 : i; };
+  const out = [];
+  Object.keys(o.aantallen || {}).forEach(id => {
+    const aant = o.aantallen[id] || 0;
+    if (!aant) return;
+    const info = o.prijzen?.[id] || vindProduct(id);
+    if (!info) return;
+    out.push({ id, naam:info.naam, cat:info.cat || vindProduct(id)?.cat || 'overig',
+               prijs:info.prijs, btw:info.btw, eenheid:info.eenheid || vindProduct(id)?.eenheid || 'fles', aant });
+  });
+  out.sort((a,b) => catIdx(a.cat) - catIdx(b.cat) || volgorde(a.id) - volgorde(b.id));
+  return out;
+}
+
+// ══════════════════════════════════════════════
+//  REGISTRATIEFORMULIER
+// ══════════════════════════════════════════════
+function initGrids() {
+  const huidig = {};
+  document.querySelectorAll('[data-reg-id]').forEach(el => { huidig[el.dataset.regId] = el.value; });
+  CATEGORIEEN.forEach(c => {
+    const lijst = PRODUCTEN.filter(p => p.cat === c.id && p.actief !== false);
+    const grid = document.getElementById(c.id + '-grid');
+    // Lege categorieën (bijv. nieuwe) niet tonen op het formulier
+    grid.closest('.card').style.display = lijst.length ? '' : 'none';
+    grid.innerHTML = lijst.length
+      ? lijst.map(p => drinkRow(p, huidig[p.id] || 0)).join('')
+      : `<p class="leeg-cat">Geen producten in deze categorie.</p>`;
+  });
+}
+
+function drinkRow(p, waarde) {
+  return `<div class="drink-row">
+    <div>
+      <div class="drink-name">${esc(p.naam)}</div>
+      <div class="drink-meta">${p.eenheid === 'liter' ? 'per liter (gehele liters)' : (EENHEDEN[p.eenheid] || 'per fles')}</div>
+    </div>
+    <div class="counter">
+      <button onclick="chg('${p.id}',-1)" aria-label="min 1">−</button>
+      <input type="number" id="reg-${p.id}" data-reg-id="${p.id}" value="${waarde}" min="0" max="999" onchange="clamp(this)">
+      <button onclick="chg('${p.id}',1)" aria-label="plus 1">+</button>
+    </div>
+  </div>`;
+}
+
+function chg(id, d) {
+  const el = document.getElementById('reg-' + id);
+  el.value = Math.max(0, (parseInt(el.value)||0) + d);
+}
+function clamp(el) {
+  let v = parseInt(el.value);
+  el.value = isNaN(v)||v<0 ? 0 : v>999 ? 999 : v;
+}
+
+function leesFormulier() {
+  const aantallen = {}, prijzen = {};
+  PRODUCTEN.filter(p => p.actief !== false).forEach(p => {
+    const a = parseInt(document.getElementById('reg-' + p.id)?.value) || 0;
+    aantallen[p.id] = a;
+    if (a > 0) prijzen[p.id] = snap(p);
+  });
+  return {
+    naam: document.getElementById('naam').value.trim(),
+    datum: document.getElementById('datum').value,
+    straat: document.getElementById('straat').value.trim(),
+    postcode: document.getElementById('postcode').value.trim(),
+    plaats: document.getElementById('plaats').value.trim(),
+    opmerking: document.getElementById('opmerking').value.trim(),
+    aantallen,
+    prijzen,
+    provisie: PROVISIE,
+    provisieBtw: PROVISIE_BTW,
+    provisieBasis: 'excl',
+    tijdstip: new Date().toISOString(),
+    id: Date.now(),
+    factuurnr: 'auto',
+  };
+}
+
+async function slaOp() {
+  if (geenDb()) return;
+  const data = leesFormulier();
+  if (!data.naam) { toast('Vul een naam in.'); return; }
+  if (!data.datum) { toast('Vul een datum in.'); return; }
+  // Jaartal volgt automatisch het huidige jaar (2026, 2027, ...)
+  data.factuurnr = `${new Date().getFullYear()}-${volgendFactuurNr}`;
+  const docId = data.id.toString();
+  await db.collection('registraties').doc(docId).set(data);
+  await db.collection('meta').doc('config').set({ factuurnr: volgendFactuurNr + 1 }, { merge: true });
+  toast('Opgeslagen!', 'success');
+  if (!confirm('Registratie opgeslagen! Formulier leegmaken?')) return;
+  leegFormulier();
+}
+
+function resetForm() {
+  if (!confirm('Formulier leegmaken?')) return;
+  leegFormulier();
+}
+
+function leegFormulier() {
+  ['naam','straat','postcode','plaats','opmerking'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('datum').value = new Date().toISOString().split('T')[0];
+  document.querySelectorAll('[data-reg-id]').forEach(el => el.value = 0);
+}
+
+// ══════════════════════════════════════════════
+//  OPGESLAGEN LIJST
+// ══════════════════════════════════════════════
+function renderOpgeslagen() {
+  const el = document.getElementById('opgeslagen-lijst');
+  if (!opgeslagen.length) {
+    el.innerHTML = `<div class="empty-state">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/></svg>
+      <p>Nog geen registraties opgeslagen.</p></div>`;
+    return;
+  }
+  el.innerHTML = opgeslagen.map((o, i) => {
+    const ds = o.datum ? new Date(o.datum+'T12:00:00').toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'}) : '–';
+    return `<div class="order-item">
+      <div class="order-info">
+        <div class="order-name">${esc(o.naam)}</div>
+        <div class="order-date">${ds} · ${esc(o.factuurnr||'')}</div>
+      </div>
+      <div class="order-actions">
+        <button class="icon-btn" onclick="bekijkReg(${i})" title="Registratie bekijken" aria-label="Bekijken">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        <button class="icon-btn" onclick="bewerkReg(${i})" title="Bewerken" aria-label="Bewerken">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="icon-btn" onclick="openFactuur(${i})" title="Factuur (beveiligd)" aria-label="Factuur">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        </button>
+        <button class="icon-btn danger" onclick="del(${i})" title="Verwijderen" aria-label="Verwijderen">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg>
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function del(i) {
+  if (geenDb()) return;
+  if (!confirm(`Registratie van "${opgeslagen[i].naam}" verwijderen?`)) return;
+  await db.collection('registraties').doc(opgeslagen[i]._docId || opgeslagen[i].id.toString()).delete();
+  toast('Verwijderd.');
+}
+
+// ══════════════════════════════════════════════
+//  WACHTWOORD MODAL
+// ══════════════════════════════════════════════
+function vraagWachtwoord(callback) {
+  wwCallback = callback;
+  document.getElementById('ww-input').value = '';
+  document.getElementById('ww-error').textContent = '';
+  document.getElementById('ww-modal').classList.add('show');
+  setTimeout(() => document.getElementById('ww-input').focus(), 50);
+}
+function checkWW() {
+  const val = document.getElementById('ww-input').value;
+  if (val === FACTUUR_WW) {
+    ontgrendeld = true;
+    document.getElementById('ww-modal').classList.remove('show');
+    if (wwCallback) { wwCallback(); wwCallback = null; }
+  } else {
+    document.getElementById('ww-error').textContent = 'Onjuist wachtwoord. Probeer opnieuw.';
+    document.getElementById('ww-input').value = '';
+    document.getElementById('ww-input').focus();
+  }
+}
+function sluitWWModal() {
+  document.getElementById('ww-modal').classList.remove('show');
+  wwCallback = null;
+}
+function beveiligd(fn) {
+  if (ontgrendeld) { fn(); return; }
+  vraagWachtwoord(fn);
+}
+
+// ══════════════════════════════════════════════
+//  REGISTRATIE BEKIJKEN (geen wachtwoord)
+// ══════════════════════════════════════════════
+function bekijkReg(i) {
+  const o = opgeslagen[i];
+  const ds = o.datum ? new Date(o.datum+'T12:00:00').toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long',year:'numeric'}) : '–';
+  let html = `<div class="reg-detail-row"><span class="reg-detail-label">Naam</span><span class="reg-detail-val">${esc(o.naam)}</span></div>`;
+  html += `<div class="reg-detail-row"><span class="reg-detail-label">Datum</span><span class="reg-detail-val">${ds}</span></div>`;
+  if (o.opmerking) html += `<div class="reg-detail-row"><span class="reg-detail-label">Opmerking</span><span class="reg-detail-val">${esc(o.opmerking)}</span></div>`;
+
+  const regels = regelsVoor(o);
+  const cats = CATEGORIEEN;
+  cats.forEach(c => {
+    const rijen = regels.filter(r => r.cat === c.id);
+    if (!rijen.length) return;
+    html += `<div class="reg-section-title">${c.naam}</div>` + rijen.map(r =>
+      `<div class="reg-detail-row"><span class="reg-detail-label">${esc(r.naam)}</span><span class="reg-detail-val">${fmtAantal(r)}</span></div>`).join('');
+  });
+  if (!regels.length) html += `<p style="color:var(--color-text-muted);font-size:0.85rem;text-align:center;padding:12px 0;">Geen dranken geregistreerd.</p>`;
+
+  document.getElementById('reg-modal-body').innerHTML = html;
+  document.getElementById('reg-modal').classList.add('show');
+}
+function sluitRegModal() {
+  document.getElementById('reg-modal').classList.remove('show');
+}
+
+// ══════════════════════════════════════════════
+//  BEWERK REGISTRATIE
+// ══════════════════════════════════════════════
+let bewerkIndex = null;
+let bewerkItems = [];
+
+function bewerkReg(i) {
+  bewerkIndex = i;
+  const o = opgeslagen[i];
+  document.getElementById('bw-naam').value     = o.naam     || '';
+  document.getElementById('bw-datum').value    = o.datum    || '';
+  document.getElementById('bw-straat').value   = o.straat   || '';
+  document.getElementById('bw-postcode').value = o.postcode || '';
+  document.getElementById('bw-plaats').value   = o.plaats   || '';
+  document.getElementById('bw-opmerking').value= o.opmerking|| '';
+
+  // Actieve producten + alles wat al op deze registratie staat
+  bewerkItems = [];
+  PRODUCTEN.forEach(p => {
+    const aant = o.aantallen?.[p.id] || 0;
+    if (p.actief !== false || aant > 0) bewerkItems.push({ id:p.id, naam:o.prijzen?.[p.id]?.naam || p.naam, eenheid:p.eenheid, aant });
+  });
+  regelsVoor(o).forEach(r => {
+    if (!bewerkItems.some(x => x.id === r.id)) bewerkItems.push({ id:r.id, naam:r.naam, eenheid:r.eenheid, aant:r.aant });
+  });
+
+  document.getElementById('bw-dranken-grid').innerHTML = bewerkItems.map(it => `<div class="drink-row" style="padding:4px 0">
+      <div><div class="drink-name">${esc(it.naam)}</div>${it.eenheid === 'liter' ? '<div class="drink-meta">per liter</div>' : ''}</div>
+      <div class="counter">
+        <button type="button" onclick="bewerkTel('${it.id}',-1)">−</button>
+        <input type="number" id="bw-${it.id}" value="${it.aant}" min="0" max="999" style="width:52px">
+        <button type="button" onclick="bewerkTel('${it.id}',1)">+</button>
+      </div>
+    </div>`).join('');
+  document.getElementById('bewerk-modal').classList.add('show');
+  document.getElementById('bw-naam').focus();
+}
+
+function bewerkTel(id, d) {
+  const el = document.getElementById('bw-' + id);
+  el.value = Math.max(0, (parseInt(el.value)||0) + d);
+}
+
+async function slaBewerking() {
+  if (bewerkIndex === null) return;
+  if (geenDb()) return;
+  const naam = document.getElementById('bw-naam').value.trim();
+  const datum = document.getElementById('bw-datum').value;
+  if (!naam) { toast('Vul een naam in.'); return; }
+  if (!datum) { toast('Vul een datum in.'); return; }
+
+  const origineel = opgeslagen[bewerkIndex];
+  const oudeRegels = regelsVoor(origineel);
+  const aantallen = {};
+  const prijzen = { ...(origineel.prijzen || {}) };
+  bewerkItems.forEach(it => {
+    const a = parseInt(document.getElementById('bw-' + it.id)?.value) || 0;
+    aantallen[it.id] = a;
+    if (a > 0 && !prijzen[it.id]) {
+      const oud = oudeRegels.find(r => r.id === it.id);
+      const p = oud || vindProduct(it.id);
+      if (p) prijzen[it.id] = snap(p);
+    }
+  });
+
+  const { _docId, ...rest } = origineel;
+  const updated = {
+    ...rest,
+    naam,
+    datum,
+    straat:    document.getElementById('bw-straat').value.trim(),
+    postcode:  document.getElementById('bw-postcode').value.trim(),
+    plaats:    document.getElementById('bw-plaats').value.trim(),
+    opmerking: document.getElementById('bw-opmerking').value.trim(),
+    aantallen,
+    prijzen,
+  };
+  await db.collection('registraties').doc(_docId || updated.id.toString()).set(updated);
+  sluitBewerkModal();
+  toast('Wijzigingen opgeslagen!', 'success');
+}
+
+function sluitBewerkModal() {
+  document.getElementById('bewerk-modal').classList.remove('show');
+  bewerkIndex = null;
+}
+
+// ══════════════════════════════════════════════
+//  PRODUCTBEHEER (beveiligd)
+// ══════════════════════════════════════════════
+function productenTabKlik() { beveiligd(() => switchTab('producten')); }
+
+function laadBeheer() {
+  beheerLijst = clone(PRODUCTEN).map(p => ({ eenheid:'fles', actief:true, ...p }));
+  beheerProvisie = PROVISIE;
+  const pvEl = document.getElementById('bh-provisie');
+  if (pvEl) pvEl.value = PROVISIE;
+  productenDirty = false;
+  renderBeheer();
+}
+
+function isInGebruik(id) {
+  return opgeslagen.some(o => (o.aantallen?.[id] || 0) > 0);
+}
+
+function renderBeheer() {
+  const el = document.getElementById('beheer-lijst');
+  if (!el) return;
+  el.innerHTML = CATEGORIEEN.map(c => {
+    const items = beheerLijst.map((p, i) => ({ p, i })).filter(x => x.p.cat === c.id);
+    const rijen = items.length ? items.map(({ p, i }) => beheerRij(p, i)).join('')
+      : `<p class="leeg-cat">Geen producten in deze categorie.</p>`;
+    return `<div class="card"><div class="card-header">${c.naam}<span class="card-header-count">${items.length}</span></div><div class="card-body beheer-body">${rijen}</div></div>`;
+  }).join('');
+  document.getElementById('beheer-dirty').style.display = productenDirty ? 'flex' : 'none';
+}
+
+function beheerRij(p, i) {
+  const gebruikt = isInGebruik(p.id);
+  const opt = (waarden, huidig, label) => waarden.map(w => `<option value="${w}" ${String(w)===String(huidig)?'selected':''}>${label(w)}</option>`).join('');
+  return `<div class="beheer-rij${p.actief === false ? ' inactief' : ''}">
+    <div class="beheer-top">
+      <input type="text" class="beheer-naam" value="${esc(p.naam)}" aria-label="Productnaam" oninput="bwijzig(${i},'naam',this.value)">
+      <label class="beheer-toon" title="Tonen op het registratieformulier">
+        <input type="checkbox" ${p.actief !== false ? 'checked' : ''} onchange="bwijzig(${i},'actief',this.checked,true)"> Tonen
+      </label>
+      <button class="icon-btn danger" onclick="verwijderProduct(${i})" ${gebruikt ? 'disabled title="In gebruik op een registratie — zet \'Tonen\' uit om te verbergen"' : 'title="Verwijderen"'} aria-label="Verwijderen">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg>
+      </button>
+    </div>
+    <div class="beheer-velden">
+      <label>Prijs (incl. btw)<span class="euro-input">€<input type="number" step="0.01" min="0" value="${Number(p.prijs).toFixed(2)}" oninput="bwijzig(${i},'prijs',parseFloat(this.value))"></span></label>
+      <label>BTW<select onchange="bwijzig(${i},'btw',parseInt(this.value))">${opt(BTW_TARIEVEN, p.btw, w => w + '%')}</select></label>
+      <label>Eenheid<select onchange="bwijzig(${i},'eenheid',this.value)">${opt(Object.keys(EENHEDEN), p.eenheid, w => EENHEDEN[w])}</select></label>
+      <label>Categorie<select onchange="bwijzig(${i},'cat',this.value,true)">${CATEGORIEEN.map(c => `<option value="${c.id}" ${c.id===p.cat?'selected':''}>${c.naam}</option>`).join('')}</select></label>
+    </div>
+  </div>`;
+}
+
+function bwijzig(i, veld, waarde, herteken) {
+  beheerLijst[i][veld] = waarde;
+  productenDirty = true;
+  if (herteken) renderBeheer();
+  else document.getElementById('beheer-dirty').style.display = 'flex';
+}
+
+function wijzigProvisie(v) {
+  beheerProvisie = parseFloat(String(v).replace(',', '.'));
+  productenDirty = true;
+  document.getElementById('beheer-dirty').style.display = 'flex';
+}
+
+function verwijderProduct(i) {
+  const p = beheerLijst[i];
+  if (isInGebruik(p.id)) { toast('Dit product staat op een registratie. Zet "Tonen" uit.'); return; }
+  if (!confirm(`"${p.naam}" verwijderen?`)) return;
+  beheerLijst.splice(i, 1);
+  productenDirty = true;
+  renderBeheer();
+}
+
+function voegProductToe() {
+  const naam = document.getElementById('np-naam').value.trim();
+  const prijs = parseFloat(document.getElementById('np-prijs').value);
+  if (!naam) { toast('Vul een productnaam in.'); return; }
+  if (isNaN(prijs) || prijs < 0) { toast('Vul een geldige prijs in.'); return; }
+  if (beheerLijst.some(p => p.naam.trim().toLowerCase() === naam.toLowerCase())) { toast('Er bestaat al een product met deze naam.'); return; }
+  beheerLijst.push({
+    id: 'p' + Date.now().toString(36),
+    naam,
+    cat: document.getElementById('np-cat').value,
+    prijs: Math.round(prijs * 100) / 100,
+    btw: parseInt(document.getElementById('np-btw').value),
+    eenheid: document.getElementById('np-eenheid').value,
+    actief: true,
+  });
+  document.getElementById('np-naam').value = '';
+  document.getElementById('np-prijs').value = '';
+  productenDirty = true;
+  slaProductenOp();
+}
+
+async function slaProductenOp() {
+  if (geenDb()) return;
+  for (const p of beheerLijst) {
+    if (!String(p.naam).trim()) { toast('Elk product moet een naam hebben.'); return; }
+    if (isNaN(p.prijs) || p.prijs < 0) { toast(`Ongeldige prijs bij "${p.naam}".`); return; }
+  }
+  if (isNaN(beheerProvisie) || beheerProvisie < 0 || beheerProvisie > 100) { toast('Vul een provisie tussen 0 en 100% in.'); return; }
+  const lijst = beheerLijst.map(p => ({
+    id:p.id, naam:String(p.naam).trim(), cat:p.cat, prijs:Math.round(p.prijs * 100) / 100,
+    btw:p.btw, eenheid:p.eenheid || 'fles', actief:p.actief !== false,
+  }));
+  try {
+    // Oudere registraties zonder vastgelegde prijzen eerst bevriezen op de huidige prijzen,
+    // zodat een prijswijziging hun factuur niet verandert.
+    const zonder = opgeslagen.filter(o => !o.prijzen || typeof o.provisie !== 'number');
+    if (zonder.length) {
+      const batch = db.batch();
+      zonder.forEach(o => {
+        let prijzen = o.prijzen;
+        if (!prijzen) {
+          prijzen = {};
+          Object.keys(o.aantallen || {}).forEach(id => {
+            if ((o.aantallen[id] || 0) > 0) { const p = vindProduct(id); if (p) prijzen[id] = snap(p); }
+          });
+        }
+        // Registraties van vóór deze instelling hadden altijd 10% provisie
+        const provisie = typeof o.provisie === 'number' ? o.provisie : 10;
+        batch.update(db.collection('registraties').doc(o._docId || String(o.id)), { prijzen, provisie });
+      });
+      await batch.commit();
+    }
+    productenDirty = false;
+    await db.collection('meta').doc('producten').set({
+      lijst,
+      provisie: Math.round(beheerProvisie * 100) / 100,
+      bijgewerkt: new Date().toISOString(),
+    });
+    toast('Producten opgeslagen!', 'success');
+  } catch (e) {
+    productenDirty = true;
+    renderBeheer();
+    toast('Opslaan mislukt — controleer de verbinding.');
+  }
+}
+
+function annuleerBeheer() {
+  if (productenDirty && !confirm('Niet-opgeslagen wijzigingen weggooien?')) return;
+  laadBeheer();
+}
+
+// ══════════════════════════════════════════════
+//  EXPORT / IMPORT DATA (sync tussen apparaten)
+// ══════════════════════════════════════════════
+function exporteerData() {
+  const payload = {
+    versie: 2,
+    exportDatum: new Date().toISOString(),
+    factuurnr: volgendFactuurNr,
+    producten: PRODUCTEN,
+    registraties: opgeslagen.map(({ _docId, ...r }) => r),
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `ojcniks-data-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('Data geëxporteerd!', 'success');
+}
+
+function importeerData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (geenDb()) { event.target.value = ''; return; }
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      const payload = JSON.parse(e.target.result);
+      if (!Array.isArray(payload.registraties)) throw new Error('Ongeldig bestand');
+      const nieuw = payload.registraties.filter(r => r.id && !opgeslagen.some(o => o.id === r.id));
+      if (nieuw.length === 0) { toast('Geen nieuwe registraties gevonden.'); return; }
+      if (!confirm(`${nieuw.length} nieuwe registratie(s) gevonden. Toevoegen aan Firebase?`)) return;
+      const batch = db.batch();
+      nieuw.forEach(({ _docId, ...r }) => {
+        batch.set(db.collection('registraties').doc(r.id.toString()), r);
+      });
+      await batch.commit();
+      toast(`${nieuw.length} registratie(s) toegevoegd!`, 'success');
+    } catch(err) {
+      toast('Fout: ongeldig bestand.');
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ══════════════════════════════════════════════
+//  FACTUUR
+// ══════════════════════════════════════════════
+function factuurTabKlik() { beveiligd(() => switchTab('factuur')); }
+
+function openFactuur(i) {
+  beveiligd(() => {
+    actieveFactuur = opgeslagen[i];
+    renderFactuur(actieveFactuur);
+    switchTab('factuur');
+  });
+}
+
+// Prijzen zijn inclusief btw: per tarief wordt het btw-deel eruit gerekend
+function btwSpecificatie(regels) {
+  const perTarief = {};
+  regels.forEach(r => { perTarief[r.btw] = (perTarief[r.btw] || 0) + r.tot; });  // r.tot is incl. btw
+  return Object.keys(perTarief).map(Number).sort((a,b) => a - b).map(t => {
+    const incl = perTarief[t];
+    const excl = incl / (1 + t / 100);
+    return { tarief:t, incl, excl, btw: incl - excl };
+  });
+}
+
+function berekenFactuur(o) {
+  const regels = regelsVoor(o).map(r => ({ ...r, tot: r.prijs * r.aant }));
+  const subtotaal = regels.reduce((s, r) => s + r.tot, 0);
+  const pct = typeof o.provisie === 'number' ? o.provisie : 10;
+  const provisie = subtotaal * pct / 100;
+  // Registraties van vóór de btw-instelling: provisie zonder btw (zoals destijds gefactureerd)
+  if (typeof o.provisieBtw !== 'number') {
+    return { regels, subtotaal, pct, provisie, provBtw:null, totaal: subtotaal + provisie, btw: btwSpecificatie(regels), btwTitel:'BTW-specificatie dranken' };
+  }
+  // Nieuwe opbouw: dranken excl. btw → provisie → btw dranken → btw provisie → eindtotaal.
+  // Bedragen worden per regel op centen afgerond; de btw per tarief is het verschil met het
+  // bedrag incl. btw, zodat de klant precies de prijs incl. btw betaalt plus de provisie.
+  const t = o.provisieBtw;
+  regels.forEach(r => {
+    r.stukExcl = r.prijs / (1 + r.btw / 100);
+    r.excl = rond(r.tot / (1 + r.btw / 100));
+  });
+  const drankExcl = rond(regels.reduce((s, r) => s + r.excl, 0));
+  const tarieven = [...new Set(regels.map(r => r.btw))].sort((a,b) => a - b);
+  const btwDranken = tarieven.map(tr => {
+    const rr = regels.filter(r => r.btw === tr);
+    const incl = rond(rr.reduce((s, r) => s + r.tot, 0));
+    const excl = rond(rr.reduce((s, r) => s + r.excl, 0));
+    return { tarief:tr, excl, btw: rond(incl - excl), incl };
+  });
+  const provExcl = rond(drankExcl * pct / 100);
+  const provBtwBedrag = rond(provExcl * t / 100);
+  const totaal = rond(drankExcl + provExcl + btwDranken.reduce((s, b) => s + b.btw, 0) + provBtwBedrag);
+  // BTW-specificatie: provisie telt mee bij haar tarief
+  const spec = btwDranken.map(b => ({ ...b }));
+  let rij = spec.find(b => b.tarief === t);
+  if (!rij) { rij = { tarief:t, excl:0, btw:0, incl:0 }; spec.push(rij); spec.sort((a,b) => a.tarief - b.tarief); }
+  rij.excl = rond(rij.excl + provExcl); rij.btw = rond(rij.btw + provBtwBedrag); rij.incl = rond(rij.excl + rij.btw);
+  return { regels, subtotaal, pct, provisie:provExcl, drankExcl, btwDranken,
+           provBtw:{ tarief:t, excl:provExcl, btw:provBtwBedrag, totaal: rond(provExcl + provBtwBedrag) },
+           totaal, btw: spec, btwTitel:'BTW-specificatie' };
+}
+
+function renderFactuur(o) {
+  const ds = o.datum ? new Date(o.datum+'T12:00:00').toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'}) : '–';
+  const dkort = o.datum ? new Date(o.datum+'T12:00:00').toLocaleDateString('nl-NL') : '–';
+  const f = berekenFactuur(o);
+
+  if (!f.regels.length) {
+    document.getElementById('factuur-inhoud').innerHTML = `<div class="empty-state"><p>Geen dranken geregistreerd.</p></div>`;
+    document.getElementById('factuur-acties').style.display = 'none';
+    return;
+  }
+
+  const nieuw = !!f.provBtw;   // nieuwe opbouw met bedragen excl. btw
+  const rijen = f.regels.map(r => `<tr>
+    <td>${dkort}</td>
+    <td>${esc(r.naam)}</td>
+    <td class="num">${isLiter(r) ? r.aant + ' L' : r.aant}</td>
+    <td class="num">€ ${fmt(nieuw ? r.stukExcl : r.prijs)}</td>
+    <td class="num">€ ${fmt(nieuw ? r.excl : r.tot)}</td>
+    <td class="num btw-label">${r.btw}%</td>
+  </tr>`).join('');
+
+  const somRij = (label, bedrag, cls = '') => `<tr class="${cls}">
+          <td colspan="4">${label}</td>
+          <td class="num">€ ${fmt(bedrag)}</td>
+          <td></td>
+        </tr>`;
+  const samenvatting = nieuw ? [
+    `<tr class="subtotaal-row"><td colspan="4"><strong>Subtotaal dranken excl. btw</strong></td><td class="num"><strong>€ ${fmt(f.drankExcl)}</strong></td><td></td></tr>`,
+    somRij(`Provisie voor OJC Niks ${fmtPct(f.pct)}%`, f.provBtw.excl, 'provisie-row'),
+    ...f.btwDranken.filter(b => b.tarief > 0).map(b => somRij(`BTW ${b.tarief}% dranken`, b.btw, 'btw-row')),
+    somRij(`BTW ${f.provBtw.tarief}% provisie`, f.provBtw.btw, 'btw-row'),
+    `<tr class="totaal-row"><td colspan="4"><strong>Eindtotaal</strong></td><td class="num"><strong>€ ${fmt(f.totaal)}</strong></td><td></td></tr>`,
+  ].join('') : [
+    `<tr class="subtotaal-row"><td colspan="4"><strong>Subtotaal dranken (incl. btw)</strong></td><td class="num"><strong>€ ${fmt(f.subtotaal)}</strong></td><td></td></tr>`,
+    somRij(`Provisie voor OJC Niks ${fmtPct(f.pct)}%`, f.provisie, 'provisie-row'),
+    `<tr class="totaal-row"><td colspan="4"><strong>Totaal</strong></td><td class="num"><strong>€ ${fmt(f.totaal)}</strong></td><td></td></tr>`,
+  ].join('');
+
+  const btwRijen = f.btw.map(b => `<tr>
+    <td>${b.tarief}%</td>
+    <td class="num">€ ${fmt(b.excl)}</td>
+    <td class="num">€ ${fmt(b.btw)}</td>
+    <td class="num">€ ${fmt(b.incl)}</td>
+  </tr>`).join('');
+  const som = k => f.btw.reduce((s, b) => s + b[k], 0);
+
+  const logo = document.querySelector('.header-logo img').src;
+
+  document.getElementById('factuur-inhoud').innerHTML = `
+  <div class="factuur-wrap">
+    <div class="factuur-kop">
+      <div class="factuur-kop-links">
+        <div class="ojc-naam">OJC Niks</div>
+      </div>
+      <div class="factuur-kop-rechts">
+        <img src="${logo}" alt="OJC Niks logo" style="height:70px;width:auto;">
+      </div>
+    </div>
+
+    <div class="factuur-meta">
+      <span class="lbl">Factuurdatum:</span><span>${dkort}</span>
+      <span class="lbl">Factuurnummer:</span><span>${esc(o.factuurnr||'–')}</span>
+      <span class="lbl">Aan:</span><span>${esc(o.naam)}${o.straat ? '<br>'+esc(o.straat) : ''}${(o.postcode||o.plaats) ? '<br>'+[esc(o.postcode),esc(o.plaats)].filter(Boolean).join(' ') : ''}</span>
+      <span class="lbl">Evenement:</span><span>${ds}</span>
+    </div>
+
+    <table class="factuur-tabel">
+      <thead>
+        <tr>
+          <th>Datum</th>
+          <th>Omschrijving</th>
+          <th class="num">Aantal</th>
+          <th class="num">Stukprijs${nieuw ? ' excl.' : ''}</th>
+          <th class="num">Totaal${nieuw ? ' excl.' : ''}</th>
+          <th class="num">BTW</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rijen}
+        ${samenvatting}
+      </tbody>
+    </table>
+
+    <div class="btw-spec">
+      <div class="btw-spec-titel">${f.btwTitel}</div>
+      <table class="btw-tabel">
+        <thead>
+          <tr><th>Tarief</th><th class="num">Bedrag excl. btw</th><th class="num">BTW</th><th class="num">Bedrag incl. btw</th></tr>
+        </thead>
+        <tbody>
+          ${btwRijen}
+          <tr class="btw-totaal">
+            <td>Totaal</td>
+            <td class="num">€ ${fmt(som('excl'))}</td>
+            <td class="num">€ ${fmt(som('btw'))}</td>
+            <td class="num">€ ${fmt(som('incl'))}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="padding:14px 24px 4px;">
+      <div class="te-betalen">
+        <span>Te betalen:</span>
+        <span class="bedrag">€ ${fmt(f.totaal)}</span>
+      </div>
+    </div>
+
+    ${o.opmerking ? `<div style="padding:10px 24px;font-size:0.82rem;color:#64748B;"><strong>Opmerking:</strong> ${esc(o.opmerking)}</div>` : ''}
+
+    <div class="factuur-footer">
+      OJC Niks | Dolgaardstraat 34, 5961 TS Horst<br>
+      <strong>T</strong> +31 6 40816924 &nbsp;|&nbsp; <strong>E</strong> penningmeester@ojcniks.nl &nbsp;|&nbsp; <strong>W</strong> www.ojcniks.nl<br>
+      <strong>IBAN</strong> NL88 RABO 0322 5773 06 &nbsp;|&nbsp; <strong>KvK</strong> 69362157 &nbsp;|&nbsp; <strong>btw-nummer</strong> NL857846334B01<br><br>
+      Wij verzoeken u vriendelijk het verschuldigde bedrag binnen 14 dagen over te maken<br>
+      naar IBAN: <strong>NL88 RABO 0322 5773 06</strong> ten name van <strong>OJC Niks</strong>
+    </div>
+  </div>`;
+
+  document.getElementById('factuur-acties').style.display = 'flex';
+}
+
+// ══════════════════════════════════════════════
+//  EXPORT TXT
+// ══════════════════════════════════════════════
+function exportTekst() {
+  if (!actieveFactuur) return;
+  const o = actieveFactuur;
+  const f = berekenFactuur(o);
+  const dkort = o.datum ? new Date(o.datum+'T12:00:00').toLocaleDateString('nl-NL') : '–';
+  let t = `FACTUUR ${o.factuurnr||''}\n`;
+  t += `Factuurdatum: ${dkort}\n`;
+  t += `Aan: ${o.naam}\n`;
+  if (o.straat) t += `     ${o.straat}\n`;
+  if (o.postcode || o.plaats) t += `     ${[o.postcode, o.plaats].filter(Boolean).join(' ')}\n`;
+  t += `\n`;
+  const nieuw = !!f.provBtw;
+  const regel = (label, bedrag) => `${(label + ':').padEnd(48)}€ ${fmt(bedrag)}\n`;
+  t += `Datum       Omschrijving       Aantal  ${nieuw ? 'Prijs ex.  Totaal ex.' : 'Stukprijs  Totaal    '} BTW\n`;
+  t += `${'─'.repeat(70)}\n`;
+  f.regels.forEach(r => {
+    const aant = isLiter(r) ? r.aant + ' L' : String(r.aant);
+    t += `${dkort.padEnd(12)}${r.naam.padEnd(19)}${aant.padEnd(8)}€${fmt(nieuw ? r.stukExcl : r.prijs).padEnd(10)}€${fmt(nieuw ? r.excl : r.tot).padEnd(11)}${r.btw}%\n`;
+  });
+  t += `\n${'─'.repeat(70)}\n`;
+  if (nieuw) {
+    t += regel('Subtotaal dranken excl. btw', f.drankExcl);
+    t += regel(`Provisie OJC Niks ${fmtPct(f.pct)}%`, f.provBtw.excl);
+    f.btwDranken.filter(b => b.tarief > 0).forEach(b => { t += regel(`BTW ${b.tarief}% dranken`, b.btw); });
+    t += regel(`BTW ${f.provBtw.tarief}% provisie`, f.provBtw.btw);
+    t += regel('Eindtotaal', f.totaal);
+  } else {
+    t += regel('Subtotaal dranken (incl. btw)', f.subtotaal);
+    t += regel(`Provisie OJC Niks ${fmtPct(f.pct)}%`, f.provisie);
+    t += regel('Totaal', f.totaal);
+  }
+  t += `\n${f.btwTitel}\n`;
+  t += `Tarief  Excl. btw     BTW           Incl. btw\n`;
+  f.btw.forEach(b => {
+    t += `${(b.tarief + '%').padEnd(8)}€ ${fmt(b.excl).padEnd(12)}€ ${fmt(b.btw).padEnd(12)}€ ${fmt(b.incl)}\n`;
+  });
+  if (o.opmerking) t += `\nOpmerking: ${o.opmerking}`;
+
+  const blob = new Blob([t], { type:'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `factuur-${o.naam.replace(/\s+/g,'-')}-${o.datum||'datum'}.txt`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ══════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.getElementById('view-'+name).classList.add('active');
+}
+
+let toastTimer;
+function toast(msg, type='') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (type==='success' ? ' success' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function rond(n) { return Math.round((n + Number.EPSILON) * 100) / 100; }
+function fmtPct(n) { return String(Math.round(n * 100) / 100).replace('.', ','); }
+function fmt(n) { return (Math.round(n * 100) / 100).toFixed(2).replace('.',','); }
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ══════════════════════════════════════════════
+//  BOOT
+// ══════════════════════════════════════════════
+document.getElementById('np-cat').innerHTML = CATEGORIEEN.map(c => `<option value="${c.id}">${c.naam}</option>`).join('');
+initGrids();
+renderOpgeslagen();
+laadBeheer();
+document.getElementById('datum').value = new Date().toISOString().split('T')[0];
+</script>
+</body>
+</html>
