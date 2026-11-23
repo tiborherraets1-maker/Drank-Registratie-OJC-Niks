@@ -1,4 +1,3 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -488,6 +487,7 @@
   .factuur-tabel td.num { text-align: right; font-variant-numeric: tabular-nums; }
   .factuur-tabel td.btw-label { color: var(--color-text-muted); font-size: 0.8rem; }
   .factuur-tabel .subtotaal-row td { font-weight: 700; border-top: 2px solid var(--ojc-oranje); border-bottom: none; background: #fff; }
+  .factuur-tabel .btw-row td { background: #fff; color: var(--color-text-muted); }
   .factuur-tabel .provisie-row td { background: var(--ojc-oranje-light); color: var(--ojc-oranje-dark); font-weight: 600; }
   .factuur-tabel .totaal-row td { font-weight: 800; font-size: 1rem; background: var(--ojc-oranje); color: #fff; border: none; }
   .factuur-footer {
@@ -568,6 +568,12 @@
     background: var(--ojc-oranje-light); border: 1.5px solid var(--ojc-oranje); border-radius: var(--radius);
     font-size: 0.85rem; font-weight: 600; color: var(--ojc-oranje-dark);
   }
+  .provisie-body { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .provisie-input { width: 110px; flex-shrink: 0; }
+  .provisie-btw { display: grid; grid-template-columns: 1fr; gap: 12px; padding-top: 0; }
+  .provisie-btw .field { margin-bottom: 0; }
+  @media (max-width: 600px) { .provisie-btw { grid-template-columns: 1fr; } }
+  .provisie-input input { text-align: right; }
   .beheer-hint { font-size: 0.8rem; color: var(--color-text-muted); margin: 4px 2px 12px; line-height: 1.5; }
 
   /* ── BTW-specificatie ── */
@@ -705,6 +711,24 @@
       <div class="card-body" id="bier-grid"></div>
     </div>
 
+    <!-- Blikjes -->
+    <div class="card">
+      <div class="card-header">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M6 7h12M6 17h12"/></svg>
+        Blikjes
+      </div>
+      <div class="card-body" id="blikjes-grid"></div>
+    </div>
+
+    <!-- Overig -->
+    <div class="card">
+      <div class="card-header">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>
+        Overig
+      </div>
+      <div class="card-body" id="overig-grid"></div>
+    </div>
+
     <div class="btn-row" id="no-print">
       <button class="btn btn-outline" onclick="resetForm()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
@@ -737,6 +761,22 @@
   <div class="view" id="view-producten">
     <div class="card">
       <div class="card-header">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
+        Provisie
+      </div>
+      <div class="card-body provisie-body">
+        <div>
+          <div class="drink-name">Provisie voor OJC Niks</div>
+          <div class="drink-meta">Over het drankbedrag excl. btw · altijd 21% btw</div>
+        </div>
+        <span class="euro-input provisie-input">
+          <input type="number" id="bh-provisie" step="0.5" min="0" max="100" aria-label="Provisie in procent" oninput="wijzigProvisie(this.value)">%
+        </span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
         Nieuw product
       </div>
@@ -760,7 +800,7 @@
           </div>
           <div class="field">
             <label for="np-eenheid">Eenheid</label>
-            <select id="np-eenheid"><option value="fles">per fles</option><option value="liter">per liter</option></select>
+            <select id="np-eenheid"><option value="fles">per fles</option><option value="blik">per blikje</option><option value="stuk">per stuk</option><option value="liter">per liter</option></select>
           </div>
         </div>
         <button class="btn btn-primary" style="width:100%" onclick="voegProductToe()">
@@ -776,7 +816,7 @@
 
     <div id="beheer-lijst"></div>
 
-    <p class="beheer-hint">Prijzen zijn inclusief btw. Een prijswijziging geldt voor nieuwe registraties; al opgeslagen registraties houden de prijs van het moment van opslaan. Zet "Tonen" uit om een product van het formulier te halen zonder het te verwijderen.</p>
+    <p class="beheer-hint">Prijzen zijn inclusief btw. Een wijziging van prijs of provisie geldt voor nieuwe registraties; al opgeslagen registraties houden de prijs en provisie van het moment van opslaan. Zet "Tonen" uit om een product van het formulier te halen zonder het te verwijderen.</p>
 
     <div class="btn-row">
       <button class="btn btn-outline" onclick="annuleerBeheer()">
@@ -904,7 +944,10 @@ const CATEGORIEEN = [
   { id:'frisdrank', naam:'Frisdrank & Sap' },
   { id:'wijn',      naam:'Wijn' },
   { id:'bier',      naam:'Bier' },
+  { id:'blikjes',   naam:'Blikjes' },
+  { id:'overig',    naam:'Overig' },
 ];
+const EENHEDEN = { fles:'per fles', blik:'per blikje', stuk:'per stuk', liter:'per liter' };
 const DEFAULT_PRODUCTEN = [
   { id:'cola',       naam:'Cola',        cat:'frisdrank', prijs:2.71, btw:9,  eenheid:'fles',  actief:true },
   { id:'cola-zero',  naam:'Cola Zero',   cat:'frisdrank', prijs:2.07, btw:9,  eenheid:'fles',  actief:true },
@@ -935,6 +978,9 @@ let ontgrendeld = false;
 let wwCallback = null;
 let beheerLijst = clone(PRODUCTEN);
 let productenDirty = false;
+let PROVISIE = 10;          // huidig provisiepercentage
+let beheerProvisie = 10;
+const PROVISIE_BTW = 21;     // provisie is een dienst: altijd 21% btw
 
 // ══════════════════════════════════════════════
 //  FIREBASE
@@ -985,6 +1031,8 @@ db.collection('meta').doc('config').onSnapshot(doc => {
 db.collection('meta').doc('producten').onSnapshot(doc => {
   const lijst = doc.exists ? doc.data().lijst : null;
   PRODUCTEN = Array.isArray(lijst) && lijst.length ? lijst : clone(DEFAULT_PRODUCTEN);
+  const pv = doc.exists ? doc.data().provisie : null;
+  PROVISIE = typeof pv === 'number' ? pv : 10;
   initGrids();
   if (!productenDirty) laadBeheer();
 });
@@ -1026,7 +1074,10 @@ function initGrids() {
   document.querySelectorAll('[data-reg-id]').forEach(el => { huidig[el.dataset.regId] = el.value; });
   CATEGORIEEN.forEach(c => {
     const lijst = PRODUCTEN.filter(p => p.cat === c.id && p.actief !== false);
-    document.getElementById(c.id + '-grid').innerHTML = lijst.length
+    const grid = document.getElementById(c.id + '-grid');
+    // Lege categorieën (bijv. nieuwe) niet tonen op het formulier
+    grid.closest('.card').style.display = lijst.length ? '' : 'none';
+    grid.innerHTML = lijst.length
       ? lijst.map(p => drinkRow(p, huidig[p.id] || 0)).join('')
       : `<p class="leeg-cat">Geen producten in deze categorie.</p>`;
   });
@@ -1036,7 +1087,7 @@ function drinkRow(p, waarde) {
   return `<div class="drink-row">
     <div>
       <div class="drink-name">${esc(p.naam)}</div>
-      <div class="drink-meta">${p.eenheid === 'liter' ? 'per liter (gehele liters)' : 'per fles'}</div>
+      <div class="drink-meta">${p.eenheid === 'liter' ? 'per liter (gehele liters)' : (EENHEDEN[p.eenheid] || 'per fles')}</div>
     </div>
     <div class="counter">
       <button onclick="chg('${p.id}',-1)" aria-label="min 1">−</button>
@@ -1071,6 +1122,9 @@ function leesFormulier() {
     opmerking: document.getElementById('opmerking').value.trim(),
     aantallen,
     prijzen,
+    provisie: PROVISIE,
+    provisieBtw: PROVISIE_BTW,
+    provisieBasis: 'excl',
     tijdstip: new Date().toISOString(),
     id: Date.now(),
     factuurnr: 'auto',
@@ -1188,7 +1242,7 @@ function bekijkReg(i) {
   if (o.opmerking) html += `<div class="reg-detail-row"><span class="reg-detail-label">Opmerking</span><span class="reg-detail-val">${esc(o.opmerking)}</span></div>`;
 
   const regels = regelsVoor(o);
-  const cats = [...CATEGORIEEN, { id:'overig', naam:'Overig' }];
+  const cats = CATEGORIEEN;
   cats.forEach(c => {
     const rijen = regels.filter(r => r.cat === c.id);
     if (!rijen.length) return;
@@ -1298,6 +1352,9 @@ function productenTabKlik() { beveiligd(() => switchTab('producten')); }
 
 function laadBeheer() {
   beheerLijst = clone(PRODUCTEN).map(p => ({ eenheid:'fles', actief:true, ...p }));
+  beheerProvisie = PROVISIE;
+  const pvEl = document.getElementById('bh-provisie');
+  if (pvEl) pvEl.value = PROVISIE;
   productenDirty = false;
   renderBeheer();
 }
@@ -1334,7 +1391,7 @@ function beheerRij(p, i) {
     <div class="beheer-velden">
       <label>Prijs (incl. btw)<span class="euro-input">€<input type="number" step="0.01" min="0" value="${Number(p.prijs).toFixed(2)}" oninput="bwijzig(${i},'prijs',parseFloat(this.value))"></span></label>
       <label>BTW<select onchange="bwijzig(${i},'btw',parseInt(this.value))">${opt(BTW_TARIEVEN, p.btw, w => w + '%')}</select></label>
-      <label>Eenheid<select onchange="bwijzig(${i},'eenheid',this.value)">${opt(['fles','liter'], p.eenheid, w => 'per ' + w)}</select></label>
+      <label>Eenheid<select onchange="bwijzig(${i},'eenheid',this.value)">${opt(Object.keys(EENHEDEN), p.eenheid, w => EENHEDEN[w])}</select></label>
       <label>Categorie<select onchange="bwijzig(${i},'cat',this.value,true)">${CATEGORIEEN.map(c => `<option value="${c.id}" ${c.id===p.cat?'selected':''}>${c.naam}</option>`).join('')}</select></label>
     </div>
   </div>`;
@@ -1345,6 +1402,12 @@ function bwijzig(i, veld, waarde, herteken) {
   productenDirty = true;
   if (herteken) renderBeheer();
   else document.getElementById('beheer-dirty').style.display = 'flex';
+}
+
+function wijzigProvisie(v) {
+  beheerProvisie = parseFloat(String(v).replace(',', '.'));
+  productenDirty = true;
+  document.getElementById('beheer-dirty').style.display = 'flex';
 }
 
 function verwijderProduct(i) {
@@ -1383,6 +1446,7 @@ async function slaProductenOp() {
     if (!String(p.naam).trim()) { toast('Elk product moet een naam hebben.'); return; }
     if (isNaN(p.prijs) || p.prijs < 0) { toast(`Ongeldige prijs bij "${p.naam}".`); return; }
   }
+  if (isNaN(beheerProvisie) || beheerProvisie < 0 || beheerProvisie > 100) { toast('Vul een provisie tussen 0 en 100% in.'); return; }
   const lijst = beheerLijst.map(p => ({
     id:p.id, naam:String(p.naam).trim(), cat:p.cat, prijs:Math.round(p.prijs * 100) / 100,
     btw:p.btw, eenheid:p.eenheid || 'fles', actief:p.actief !== false,
@@ -1390,20 +1454,29 @@ async function slaProductenOp() {
   try {
     // Oudere registraties zonder vastgelegde prijzen eerst bevriezen op de huidige prijzen,
     // zodat een prijswijziging hun factuur niet verandert.
-    const zonder = opgeslagen.filter(o => !o.prijzen);
+    const zonder = opgeslagen.filter(o => !o.prijzen || typeof o.provisie !== 'number');
     if (zonder.length) {
       const batch = db.batch();
       zonder.forEach(o => {
-        const prijzen = {};
-        Object.keys(o.aantallen || {}).forEach(id => {
-          if ((o.aantallen[id] || 0) > 0) { const p = vindProduct(id); if (p) prijzen[id] = snap(p); }
-        });
-        batch.update(db.collection('registraties').doc(o._docId || String(o.id)), { prijzen });
+        let prijzen = o.prijzen;
+        if (!prijzen) {
+          prijzen = {};
+          Object.keys(o.aantallen || {}).forEach(id => {
+            if ((o.aantallen[id] || 0) > 0) { const p = vindProduct(id); if (p) prijzen[id] = snap(p); }
+          });
+        }
+        // Registraties van vóór deze instelling hadden altijd 10% provisie
+        const provisie = typeof o.provisie === 'number' ? o.provisie : 10;
+        batch.update(db.collection('registraties').doc(o._docId || String(o.id)), { prijzen, provisie });
       });
       await batch.commit();
     }
     productenDirty = false;
-    await db.collection('meta').doc('producten').set({ lijst, bijgewerkt: new Date().toISOString() });
+    await db.collection('meta').doc('producten').set({
+      lijst,
+      provisie: Math.round(beheerProvisie * 100) / 100,
+      bijgewerkt: new Date().toISOString(),
+    });
     toast('Producten opgeslagen!', 'success');
   } catch (e) {
     productenDirty = true;
@@ -1479,7 +1552,7 @@ function openFactuur(i) {
 // Prijzen zijn inclusief btw: per tarief wordt het btw-deel eruit gerekend
 function btwSpecificatie(regels) {
   const perTarief = {};
-  regels.forEach(r => { perTarief[r.btw] = (perTarief[r.btw] || 0) + r.tot; });
+  regels.forEach(r => { perTarief[r.btw] = (perTarief[r.btw] || 0) + r.tot; });  // r.tot is incl. btw
   return Object.keys(perTarief).map(Number).sort((a,b) => a - b).map(t => {
     const incl = perTarief[t];
     const excl = incl / (1 + t / 100);
@@ -1490,8 +1563,39 @@ function btwSpecificatie(regels) {
 function berekenFactuur(o) {
   const regels = regelsVoor(o).map(r => ({ ...r, tot: r.prijs * r.aant }));
   const subtotaal = regels.reduce((s, r) => s + r.tot, 0);
-  const provisie = subtotaal * 0.10;
-  return { regels, subtotaal, provisie, totaal: subtotaal + provisie, btw: btwSpecificatie(regels) };
+  const pct = typeof o.provisie === 'number' ? o.provisie : 10;
+  const provisie = subtotaal * pct / 100;
+  // Registraties van vóór de btw-instelling: provisie zonder btw (zoals destijds gefactureerd)
+  if (typeof o.provisieBtw !== 'number') {
+    return { regels, subtotaal, pct, provisie, provBtw:null, totaal: subtotaal + provisie, btw: btwSpecificatie(regels), btwTitel:'BTW-specificatie dranken' };
+  }
+  // Nieuwe opbouw: dranken excl. btw → provisie → btw dranken → btw provisie → eindtotaal.
+  // Bedragen worden per regel op centen afgerond; de btw per tarief is het verschil met het
+  // bedrag incl. btw, zodat de klant precies de prijs incl. btw betaalt plus de provisie.
+  const t = o.provisieBtw;
+  regels.forEach(r => {
+    r.stukExcl = r.prijs / (1 + r.btw / 100);
+    r.excl = rond(r.tot / (1 + r.btw / 100));
+  });
+  const drankExcl = rond(regels.reduce((s, r) => s + r.excl, 0));
+  const tarieven = [...new Set(regels.map(r => r.btw))].sort((a,b) => a - b);
+  const btwDranken = tarieven.map(tr => {
+    const rr = regels.filter(r => r.btw === tr);
+    const incl = rond(rr.reduce((s, r) => s + r.tot, 0));
+    const excl = rond(rr.reduce((s, r) => s + r.excl, 0));
+    return { tarief:tr, excl, btw: rond(incl - excl), incl };
+  });
+  const provExcl = rond(drankExcl * pct / 100);
+  const provBtwBedrag = rond(provExcl * t / 100);
+  const totaal = rond(drankExcl + provExcl + btwDranken.reduce((s, b) => s + b.btw, 0) + provBtwBedrag);
+  // BTW-specificatie: provisie telt mee bij haar tarief
+  const spec = btwDranken.map(b => ({ ...b }));
+  let rij = spec.find(b => b.tarief === t);
+  if (!rij) { rij = { tarief:t, excl:0, btw:0, incl:0 }; spec.push(rij); spec.sort((a,b) => a.tarief - b.tarief); }
+  rij.excl = rond(rij.excl + provExcl); rij.btw = rond(rij.btw + provBtwBedrag); rij.incl = rond(rij.excl + rij.btw);
+  return { regels, subtotaal, pct, provisie:provExcl, drankExcl, btwDranken,
+           provBtw:{ tarief:t, excl:provExcl, btw:provBtwBedrag, totaal: rond(provExcl + provBtwBedrag) },
+           totaal, btw: spec, btwTitel:'BTW-specificatie' };
 }
 
 function renderFactuur(o) {
@@ -1505,14 +1609,32 @@ function renderFactuur(o) {
     return;
   }
 
+  const nieuw = !!f.provBtw;   // nieuwe opbouw met bedragen excl. btw
   const rijen = f.regels.map(r => `<tr>
     <td>${dkort}</td>
     <td>${esc(r.naam)}</td>
     <td class="num">${isLiter(r) ? r.aant + ' L' : r.aant}</td>
-    <td class="num">€ ${fmt(r.prijs)}</td>
-    <td class="num">€ ${fmt(r.tot)}</td>
+    <td class="num">€ ${fmt(nieuw ? r.stukExcl : r.prijs)}</td>
+    <td class="num">€ ${fmt(nieuw ? r.excl : r.tot)}</td>
     <td class="num btw-label">${r.btw}%</td>
   </tr>`).join('');
+
+  const somRij = (label, bedrag, cls = '') => `<tr class="${cls}">
+          <td colspan="4">${label}</td>
+          <td class="num">€ ${fmt(bedrag)}</td>
+          <td></td>
+        </tr>`;
+  const samenvatting = nieuw ? [
+    `<tr class="subtotaal-row"><td colspan="4"><strong>Subtotaal dranken excl. btw</strong></td><td class="num"><strong>€ ${fmt(f.drankExcl)}</strong></td><td></td></tr>`,
+    somRij(`Provisie voor OJC Niks ${fmtPct(f.pct)}%`, f.provBtw.excl, 'provisie-row'),
+    ...f.btwDranken.filter(b => b.tarief > 0).map(b => somRij(`BTW ${b.tarief}% dranken`, b.btw, 'btw-row')),
+    somRij(`BTW ${f.provBtw.tarief}% provisie`, f.provBtw.btw, 'btw-row'),
+    `<tr class="totaal-row"><td colspan="4"><strong>Eindtotaal</strong></td><td class="num"><strong>€ ${fmt(f.totaal)}</strong></td><td></td></tr>`,
+  ].join('') : [
+    `<tr class="subtotaal-row"><td colspan="4"><strong>Subtotaal dranken (incl. btw)</strong></td><td class="num"><strong>€ ${fmt(f.subtotaal)}</strong></td><td></td></tr>`,
+    somRij(`Provisie voor OJC Niks ${fmtPct(f.pct)}%`, f.provisie, 'provisie-row'),
+    `<tr class="totaal-row"><td colspan="4"><strong>Totaal</strong></td><td class="num"><strong>€ ${fmt(f.totaal)}</strong></td><td></td></tr>`,
+  ].join('');
 
   const btwRijen = f.btw.map(b => `<tr>
     <td>${b.tarief}%</td>
@@ -1548,33 +1670,19 @@ function renderFactuur(o) {
           <th>Datum</th>
           <th>Omschrijving</th>
           <th class="num">Aantal</th>
-          <th class="num">Stukprijs</th>
-          <th class="num">Totaal</th>
+          <th class="num">Stukprijs${nieuw ? ' excl.' : ''}</th>
+          <th class="num">Totaal${nieuw ? ' excl.' : ''}</th>
           <th class="num">BTW</th>
         </tr>
       </thead>
       <tbody>
         ${rijen}
-        <tr class="subtotaal-row">
-          <td colspan="4"><strong>Subtotaal dranken (incl. btw)</strong></td>
-          <td class="num"><strong>€ ${fmt(f.subtotaal)}</strong></td>
-          <td></td>
-        </tr>
-        <tr class="provisie-row">
-          <td colspan="4">Provisie voor OJC Niks 10%</td>
-          <td class="num">€ ${fmt(f.provisie)}</td>
-          <td></td>
-        </tr>
-        <tr class="totaal-row">
-          <td colspan="4"><strong>Totaal</strong></td>
-          <td class="num"><strong>€ ${fmt(f.totaal)}</strong></td>
-          <td></td>
-        </tr>
+        ${samenvatting}
       </tbody>
     </table>
 
     <div class="btw-spec">
-      <div class="btw-spec-titel">BTW-specificatie dranken</div>
+      <div class="btw-spec-titel">${f.btwTitel}</div>
       <table class="btw-tabel">
         <thead>
           <tr><th>Tarief</th><th class="num">Bedrag excl. btw</th><th class="num">BTW</th><th class="num">Bedrag incl. btw</th></tr>
@@ -1626,17 +1734,27 @@ function exportTekst() {
   if (o.straat) t += `     ${o.straat}\n`;
   if (o.postcode || o.plaats) t += `     ${[o.postcode, o.plaats].filter(Boolean).join(' ')}\n`;
   t += `\n`;
-  t += `Datum       Omschrijving       Aantal  Stukprijs  Totaal    BTW\n`;
-  t += `${'─'.repeat(65)}\n`;
+  const nieuw = !!f.provBtw;
+  const regel = (label, bedrag) => `${(label + ':').padEnd(48)}€ ${fmt(bedrag)}\n`;
+  t += `Datum       Omschrijving       Aantal  ${nieuw ? 'Prijs ex.  Totaal ex.' : 'Stukprijs  Totaal    '} BTW\n`;
+  t += `${'─'.repeat(70)}\n`;
   f.regels.forEach(r => {
     const aant = isLiter(r) ? r.aant + ' L' : String(r.aant);
-    t += `${dkort.padEnd(12)}${r.naam.padEnd(19)}${aant.padEnd(8)}€${fmt(r.prijs).padEnd(11)}€${fmt(r.tot).padEnd(10)}${r.btw}%\n`;
+    t += `${dkort.padEnd(12)}${r.naam.padEnd(19)}${aant.padEnd(8)}€${fmt(nieuw ? r.stukExcl : r.prijs).padEnd(10)}€${fmt(nieuw ? r.excl : r.tot).padEnd(11)}${r.btw}%\n`;
   });
-  t += `\n${'─'.repeat(65)}\n`;
-  t += `Subtotaal dranken (incl. btw):                  € ${fmt(f.subtotaal)}\n`;
-  t += `Provisie OJC Niks 10%:                          € ${fmt(f.provisie)}\n`;
-  t += `Totaal:                                         € ${fmt(f.totaal)}\n`;
-  t += `\nBTW-specificatie dranken\n`;
+  t += `\n${'─'.repeat(70)}\n`;
+  if (nieuw) {
+    t += regel('Subtotaal dranken excl. btw', f.drankExcl);
+    t += regel(`Provisie OJC Niks ${fmtPct(f.pct)}%`, f.provBtw.excl);
+    f.btwDranken.filter(b => b.tarief > 0).forEach(b => { t += regel(`BTW ${b.tarief}% dranken`, b.btw); });
+    t += regel(`BTW ${f.provBtw.tarief}% provisie`, f.provBtw.btw);
+    t += regel('Eindtotaal', f.totaal);
+  } else {
+    t += regel('Subtotaal dranken (incl. btw)', f.subtotaal);
+    t += regel(`Provisie OJC Niks ${fmtPct(f.pct)}%`, f.provisie);
+    t += regel('Totaal', f.totaal);
+  }
+  t += `\n${f.btwTitel}\n`;
   t += `Tarief  Excl. btw     BTW           Incl. btw\n`;
   f.btw.forEach(b => {
     t += `${(b.tarief + '%').padEnd(8)}€ ${fmt(b.excl).padEnd(12)}€ ${fmt(b.btw).padEnd(12)}€ ${fmt(b.incl)}\n`;
@@ -1670,6 +1788,8 @@ function toast(msg, type='') {
   toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
 }
 
+function rond(n) { return Math.round((n + Number.EPSILON) * 100) / 100; }
+function fmtPct(n) { return String(Math.round(n * 100) / 100).replace('.', ','); }
 function fmt(n) { return (Math.round(n * 100) / 100).toFixed(2).replace('.',','); }
 function esc(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -1686,5 +1806,3 @@ document.getElementById('datum').value = new Date().toISOString().split('T')[0];
 </script>
 </body>
 </html>
-
-</body></html>
